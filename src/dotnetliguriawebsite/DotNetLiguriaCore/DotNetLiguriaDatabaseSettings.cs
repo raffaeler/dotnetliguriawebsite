@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace DotNetLiguriaCore
 {
     public class DotNetLiguriaDatabaseSettings
-    { 
+    {
         public string ConnectionString { get; set; } = null!;
 
         public string DatabaseName { get; set; } = null!;
@@ -15,5 +15,15 @@ namespace DotNetLiguriaCore
         public string WorkshopCollectionName { get; set; } = null!;
 
         public string SpeakerCollectionName { get; set; } = null!;
+
+        public string BoardCollectionName { get; set; } = null!;
+
+        public string CounterCollectionName { get; set; } = null!;
+
+        public string WorkshopFileCollectionName { get; set; } = null!;
+
+        public string TopMenuCollectionName { get; set; } = null!;
+
+        public string FeedbackCollectionName { get; set; } = null!;
     }
 }

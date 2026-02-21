@@ -1,151 +1,79 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-//import logo from './assets/Logo_W400.png';
-import logo from './assets/Logo_H200.png';
-//import logo from './assets/Logo_H100.png';
 import './App.css';
-import React, {useState} from 'react';
-import {useOidcFetch} from '@axa-fr/react-oidc';
-import {useOidc} from "@axa-fr/react-oidc";
-import {useOidcIdToken, useOidcAccessToken} from '@axa-fr/react-oidc';
-import {Route, Routes} from 'react-router-dom';
-import AdminHome from './pages/AdminHome/AdminHome';
-import HomeHeader from "./components/HomeHeader/HomeHeader";
-import PageNotFound from "./pages/PageNotFound/PageNotFound";
-import AdminTokens from "./pages/AdminTokens/AdminTokens";
+import React, { useEffect, useState } from 'react';
+import { useOidc } from "@axa-fr/react-oidc";
+import { Route, Routes } from 'react-router-dom';
 import Layout from "./components/Layout/Layout";
-
-const acr_to_loa = Object.freeze({
-    pwd: 1,
-    mfa: 2,
-    hwk: 3,
-});
+import AdminWorkshops from "./components/AdminWorkshops/AdminWorkshops";
+import AdminSpeakers from "./components/AdminSpeakers/AdminSpeakers";
+import AdminHome from './components/AdminHome/AdminHome';
+import AdminProfile from './components/AdminProfile/AdminProfile';
+import AdminFeedbacks from './components/AdminFeedbacks/AdminFeedbacks';
+import AdminEvents from './components/AdminEvents/AdminEvents';
+import AdminLayout from "./components/AdminLayout/AdminLayout";
+import HomePage from "./components/HomePage/HomePage";
+import Workshops from "./components/Workshops/Workshops";
+import WorkshopDetail from "./components/WorkshopDetail/WorkshopDetail";
+import AdminDownloads from "./components/AdminDownloads/AdminDownloads";
+import AdminBoard from "./components/AdminBoard/AdminBoard";
+import AdminBoardDetail from "./components/AdminBoardDetail/AdminBoardDetail";
+import AdminSpeakerDetail from "./components/AdminSpeakerDetail/AdminSpeakerDetail";
+import AdminWorkshopDetail from "./components/AdminWorkshopDetail/AdminWorkshopDetail";
+import AdminWorkshopCreate from "./components/AdminWorkshopCreate/AdminWorkshopCreate";
+import AdminTopMenu from "./components/AdminTopMenu/AdminTopMenu";
+import AdminTopMenuDetail from "./components/AdminTopMenuDetail/AdminTopMenuDetail";
+import Feedback from "./components/Feedback/Feedback";
 
 function App() {
-    const {login, logout, renewTokens, isAuthenticated} = useOidc();
-    const {idToken, idTokenPayload} = useOidcIdToken();
-    const {accessToken, accessTokenPayload} = useOidcAccessToken();
+    const { isAuthenticated } = useOidc();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [result, setResult] = useState("");
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isError, setIsError] = useState(true);
 
-    const {fetch} = useOidcFetch();
-
-    // switch (auth.activeNavigator) {
-    //   case "signinSilent":
-    //     return <div>Signing you in...</div>;
-    //   case "signoutRedirect":
-    //     return <div>Signing you out...</div>;
-    //   default:
-    // }
-
-    // if (auth.isLoading) {
-    //   return <div>Loading...</div>;
-    // }
-
-    // if (auth.error) {
-    //   return <div>Oops... {auth.error.message}</div>;
-    // }
-
-    // if (auth.isAuthenticated) {
-    //   //console.log(auth.user.profile);
-    //   return (
-    //     <div>
-    //       Hello {auth.user?.profile.name}{" "}
-    //       <button onClick={() => void auth.removeUser()}>Log out</button>
-    //       <div>Claim sub: {auth.user.profile['sub']}</div>
-
-    //     </div>
-    //   );
-    // }
-
-    const invokeAPI = async (resource: string, requested_loa: number, previousInvocationOk = true) => {
-        try {
-            console.log(`requesting ${resource} with loa:${requested_loa}`);
-            console.log("I'm here");
-            const token = idToken;
-            //console.log(token);
-            if (!isAuthenticated) {
-                setResult("User is not authenticated");
-                setIsError(true);
-                return;
-            }
-
-            const token_loa = acr_to_loa[accessTokenPayload.acr];
-            if (token_loa < requested_loa) {
-                setResult("User need higher privileges: " + Object.keys(acr_to_loa)[requested_loa - 1]);
-                setIsError(true);
-                return;
-            }
-
-            const loadedUsers = await fetch("https://hello.vevy.com/realms/DotNetLiguria/users", {
-                // headers: {
-                //   Authorization: `Bearer ${token}`,
-                // },
-            });
-            console.log(loadedUsers);
-
-            const response = await fetch(window.location.origin + "/api/values/" + resource, {
-                // headers: {
-                //   Authorization: `Bearer ${token}`,
-                // },
-            });
-
-            if (!response.ok) {
-                let message;
-                try {
-                    console.log(response);
-                    const authError = response.headers.get("WWW-Authenticate");
-                    message = `Fetch failed with HTTP status ${response.status} ${authError}  ${await response.text()}`;
-                } catch (e) {
-                    message = `Fetch failed with HTTP status ${response.status} ${response.statusText}`;
-                }
-
-                setResult(message);
-                setIsError(true);
-                return;
-            }
-
-            setResult(await response.json());
-            setIsError(false);
-        } catch (e) {
-            console.log(e);
-            setResult(e.message);
-            setIsError(true);
+    useEffect(() => {
+        if (!isAuthenticated) {
+            localStorage.removeItem("profileStore");
         }
-    }
-
-    const loggedOut = () => {
-        setResult("");
-        setIsError(true);
-    }
+        console.log("Auth: ", isAuthenticated);
+    }, [isAuthenticated]);
 
     return (
         <div className="App">
-            {isAuthenticated ? (
-                <>
+            <>
+                {isAuthenticated && (
                     <Routes>
-                        <Route path='/' exact element={<HomeHeader/>}/>
-                        <Route element={<Layout/>}>
-                            <Route path='/admin' element={<AdminHome/>}/>
-                            <Route path='/admin/analytics/' element={<PageNotFound pagename={"Analytics"}/>}/>
-                            <Route path='/admin/users/' element={<PageNotFound pagename={"Users"}/>}/>
-                            <Route path='/admin/workshops/' element={<PageNotFound pagename={"Workshops"}/>}/>
-                            <Route path='/admin/events/' element={<PageNotFound pagename={"Events"}/>}/>
-                            <Route path='/admin/reports/' element={<PageNotFound pagename={"Reports"}/>}/>
-                            <Route path='/admin/mails/' element={<PageNotFound pagename={"Mails"}/>}/>
-                            <Route path='/admin/feedbacks/' element={<PageNotFound pagename={"Feedbacks"}/>}/>
-                            <Route path='/admin/messages/' element={<PageNotFound pagename={"Messages"}/>}/>
-                            <Route path='/admin/manage/' element={<PageNotFound pagename={"Manage"}/>}/>
-                            <Route path='/admin/tokens/' element={<AdminTokens pagename={"tokens"}/>}/>
+                        {/*<Route path='/' element={ <HomePage/> }/>*/}
+                        <Route element={<AdminLayout />}>
+                            <Route path='/admin' element={<AdminHome pageName={"Admin Dashboard"} />} />
+                            <Route path='/admin/profile/' element={<AdminProfile />} />
+                            <Route path='/admin/board/' element={<AdminBoard pageName={"Board"} />} />
+                            <Route path='/admin/board/:id' element={<AdminBoardDetail pageName={"Board Detail"} />} />
+                            <Route path='/admin/speakers/' element={<AdminSpeakers pageName={"Speakers"} />} />
+                            <Route path='/admin/speakers/:id' element={<AdminSpeakerDetail />} />
+                            <Route path='/admin/workshops/' element={<AdminWorkshops pageName={"Workshops"} />} />
+                            <Route path='/admin/workshop/create' element={<AdminWorkshopCreate />} />
+                            <Route path='/admin/workshop/:id' element={<AdminWorkshopDetail pageName={"Workshop Detail"} />} />
+                            <Route path='/admin/events/' element={<AdminEvents pageName={"Events"} />} />
+                            <Route path='/admin/feedbacks' element={<AdminFeedbacks pageName={"Feedbacks"} />} />
+                            <Route path='/admin/topmenu/' element={<AdminTopMenu pageName={"Top Menu"} />} />
+                            <Route path='/admin/topmenu/:id' element={<AdminTopMenuDetail />} />
+                            <Route path='/admin/downloads' element={<AdminDownloads pageName={"Downloads"} />} />
                         </Route>
                     </Routes>
-                </>
-            ) : (
-                <>
-                    <HomeHeader/>
-                </>
-            )}
+                )}
+                <Routes>
+                    <Route path='/' element={<HomePage />} />
+                    <Route element={<Layout />}>
+                        <Route>
+                            <Route path="/workshops" element={<Workshops pageName={"Workshops"} />}></Route>
+                            <Route path="/workshop/:id" element={<WorkshopDetail pageName={"Workshop Detail"} />}></Route>
+                            <Route path="/feedback/:workshopId" element={<Feedback workshopId="" />}></Route>
+                        </Route>
+                    </Route>
+                </Routes>
+            </>
         </div>
     );
 

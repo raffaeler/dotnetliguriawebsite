@@ -2,13 +2,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import './loginControl.css';
-import {useOidc} from "@axa-fr/react-oidc";
-import {useOidcUser} from '@axa-fr/react-oidc';
-import {Link} from "react-router-dom";
-
+import { useOidc, useOidcIdToken } from "@axa-fr/react-oidc";
+import { useOidcUser } from '@axa-fr/react-oidc';
+import { Avatar, Box, Button, Typography } from "@mui/material";
+import { Link as RouterLink } from 'react-router-dom';
 function LoginControl(props) {
-    const {login, logout, isAuthenticated} = useOidc();
-    const {oidcUser, oidcUserLoadingState} = useOidcUser();
+    const { login, logout, isAuthenticated } = useOidc();
+    const { oidcUser, oidcUserLoadingState } = useOidcUser();
 
     // const removeSessionStorageOidc = () => {
     //     var oidcKeys = Object.keys(sessionStorage)
@@ -46,7 +46,19 @@ function LoginControl(props) {
         await logout();
         //await auth.removeUser();
         // eslint-disable-next-line react/prop-types
+        localStorage.removeItem("profileStore");
         props.onLogout();
+    }
+
+    const stringAvatar = (name) => {
+        const currentName = String(name);
+        console.log(currentName);
+        if (currentName === null || currentName === undefined || currentName === '') {
+            return "DN";
+        }
+        return {
+            children: `${currentName.split(' ')[0][0]}${currentName.split(' ')[1][0]}`,
+        };
     }
 
     const logoutAndRevoke = async () => {
@@ -54,43 +66,42 @@ function LoginControl(props) {
         //await auth.revokeTokens(["access_token", "refresh_token"]);
         //await auth.removeUser();
         //removeSessionStorageOidc();
+        localStorage.removeItem("profileStore");
         props.onLogout();
     }
 
-    // if (auth.isLoading) {
-    //     return <div>Loading...</div>;
-    // }
-
-    // if (auth.error) {
-    //     return <div>Authentication error: {auth.error.message}</div>;
-    // }
     if (isAuthenticated) {
-        //console.log(oidcUser);
         let name = oidcUser == null ? "(none)" : oidcUser.name;
         return (
-            <div className="auth">
-                <span className="helloUser"><Link to={"/admin"}>Admin</Link></span>
-                <span className="helloUser">Hello {name}</span>
-                <span className="helloUser"><a href="#" onClick={logoutPlain}>Log out</a></span>
-                <span className="helloUser"><a href="#" onClick={logoutAndRevoke}>Log out and Revoke</a></span>
-            </div>
+            <Box display={"flex"} flexDirection={"row"} alignItems={"center"} gap={1} component={"div"}>
+                <Typography fontSize="1.1rem" fontFamily="Titillium Web" fontWeight={600} color="white">
+                    Benvenuto,{' '}
+                </Typography>
+                <RouterLink
+                    to="/admin"
+                    style={{
+                        color: 'white',
+                        textDecoration: 'none',
+                        fontSize: '1.1rem',
+                        fontFamily: 'Titillium Web',
+                        fontWeight: 600
+                    }}
+                    className="user-name-link"
+                >
+                    {name}
+                </RouterLink>
+                <Button color="inherit" sx={{ padding: "0", minWidth: 'auto', ml: 1 }} onClick={logoutPlain}>
+                    <Typography fontSize="1.1rem" fontFamily="Titillium Web" fontWeight={600} color="white">Logout</Typography>
+                </Button>
+            </Box>
         );
     } else {
         return (
-            <div className="auth">
-                <span className="helloUser"><a href="#" onClick={loginPlain}>Log in</a></span>
-                <span className="helloUser"><a href="#" onClick={loginMfa}>Log in [MFA]</a></span>
-
-                {/*
-                    The following link is used for the "Super Secret" page
-                    The scenario is when using three levels of Step-Up auth which are:
-                    - Password (pwd)
-                    - TOTP Google Authenticator (mfa)
-                    - Hardware FIDO2 key (hwk)
-                 */}
-
-                {/* <span className="helloUser"><a href="#" onClick={loginHwk}>Log in [HWK]</a></span> */}
-            </div>
+            <Box display={"flex"} flexDirection={"row"} alignItems={'center'} component={"div"}>
+                <Button color="inherit" onClick={loginPlain} sx={{ padding: "0", minWidth: 'auto', lineHeight: 1 }}>
+                    <Typography fontSize="1.1rem" fontFamily="Titillium Web" fontWeight={600} color="white">Area Personale</Typography>
+                </Button>
+            </Box>
         );
     }
 }

@@ -10,14 +10,11 @@ namespace DotNetLiguriaCore.Controllers
     {
         private readonly SpeakerService _speakerService;
 
-        public SpeakerController(SpeakerService speakerService)
-        {
-            _speakerService = speakerService;
-        }
+        public SpeakerController(SpeakerService speakerService) => _speakerService = speakerService;
 
         [HttpGet]
-        public async Task<List<WorkshopSpeaker>> Get() =>
-            await _speakerService.GetAsync();
+        public async Task<List<WorkshopSpeaker>> Get([FromQuery] bool onlyActive = false) =>
+            await _speakerService.GetAsync(onlyActive);
 
         [HttpGet("{id}")]
         public async Task<ActionResult<WorkshopSpeaker>> Get(Guid id)

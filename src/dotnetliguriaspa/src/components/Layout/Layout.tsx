@@ -1,20 +1,23 @@
 import React, { FC } from 'react';
-import styles from './Layout.module.css';
-import SideBar from "../SideBar/SideBar";
 import { Outlet } from "react-router-dom"
+import { Box } from "@mui/material";
 import TopBar from "../TopBar/TopBar";
+import Footer from "../Footer/Footer";
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface LayoutProps {}
+interface LayoutProps {
+    pageName?: string;
+}
 
-const Layout: FC<LayoutProps> = () => (
-    <div className={styles.Layout} data-testid="Layout">
-        <TopBar/>
-        <div className="container">
-            <SideBar/>
-            <Outlet/>
-        </div>
-    </div>
-);
+const Layout: FC<LayoutProps> = ({ pageName }) => {
+    return (
+        <>
+            <TopBar showMenu={true} pageName={pageName} />
+            <Box component={"div"} sx={{ paddingTop: '0px' }}>
+                <Outlet />
+            </Box>
+            <Footer />
+        </>
+    )
+};
 
 export default Layout;

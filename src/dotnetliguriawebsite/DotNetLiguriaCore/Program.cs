@@ -1,4 +1,3 @@
-
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -12,8 +11,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using Microsoft.IdentityModel.Logging;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DotNetLiguriaCore;
@@ -45,8 +43,8 @@ public class Program
             options.AddPolicy(CorsPolicy, policy =>
             {
                 policy
-                    //.AllowAnyOrigin()
-                    .WithOrigins(AllowedOrigins)
+                    .AllowAnyOrigin()
+                    // .WithOrigins(AllowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
@@ -64,6 +62,11 @@ public class Program
 
         builder.Services.AddSingleton<WorkshopService>();
         builder.Services.AddSingleton<SpeakerService>();
+        builder.Services.AddSingleton<BoardService>();
+        builder.Services.AddSingleton<CounterService>();
+        builder.Services.AddSingleton<WorkshopFileService>();
+        builder.Services.AddSingleton<TopMenuService>();
+        builder.Services.AddSingleton<FeedbackService>();
 
         var app = builder.Build();
         app.UseCors(CorsPolicy);
@@ -72,17 +75,70 @@ public class Program
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+            app.UseDeveloperExceptionPage();
             //app.UseHsts();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
         }
 
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseStaticFiles();
+        
+        var contentsPath = Path.Combine(builder.Environment.ContentRootPath, "Contents");
+        if (!Directory.Exists(contentsPath))
+        {
+            Directory.CreateDirectory(contentsPath);
+        }
+        
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(contentsPath),
+            RequestPath = "/Contents"
+        });
+        
         app.UseRouting();
 
         app.UseAuthorization();
+
+        // Map API controllers first
         app.MapControllers();
-        app.MapDefaultControllerRoute();
+
+        // Handle development-time browser scripts
+        if (app.Environment.IsDevelopment())
+        {
+            // Handle browser refresh script
+            app.MapGet("/_framework/aspnetcore-browser-refresh.js", async context =>
+            {
+                context.Response.ContentType = "application/javascript; charset=utf-8";
+                await context.Response.WriteAsync("// ASP.NET Core browser refresh disabled for SPA");
+            });
+
+            // Handle browser link script and related endpoints
+            app.MapGet("/_vs/browserLink", async context =>
+            {
+                context.Response.ContentType = "application/javascript; charset=utf-8";
+                await context.Response.WriteAsync("// Browser Link disabled for SPA");
+            });
+
+            app.MapPost("/_vs/browserLink", async context =>
+            {
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync("OK");
+            });
+
+            // Handle any other _vs/ requests
+            app.MapFallback("/_vs/{**path}", async context =>
+            {
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync("OK");
+            });
+        }
+
+        // Map SPA fallback last - this ensures API routes are handled before fallback
         app.MapFallbackToFile("/index.html");
         //    .WithMetadata(new HttpMethodMetadata(new[] { "GET" }));   // specify more verbs on static pages
 
@@ -110,7 +166,7 @@ public class Program
         services.Configure<AuthServerConfiguration>(authServerSection);
         var authServerConfig = authServerSection.Get<AuthServerConfiguration>();
 
-        if(authServerConfig == null)
+        if (authServerConfig == null)
         {
             throw new InvalidOperationException(
                 $"The configuraton '{AuthServerSectionName}' cannot be found");
@@ -179,7 +235,7 @@ public class Program
         .AddJwtBearer(options =>
         {
             var jwtHandler = (options.SecurityTokenValidators.FirstOrDefault() as JwtSecurityTokenHandler);
-            if(jwtHandler != null)
+            if (jwtHandler != null)
             {
                 // false: use the short names. For example: "acr"
                 // true: use the long uri type names
